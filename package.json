@@ -1,0 +1,29 @@
+{
+  "name": "online-uno",
+  "version": "1.0.0",
+  "description": "Online multiplayer Uno with rooms for 2 to 10 players",
+  "main": "src/server.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "node --test test/game.test.js test/rooms.test.js test/moments.test.js",
+    "start": "node src/server.js",
+    "client:install": "npm --prefix client install",
+    "client:build": "npm --prefix client run build",
+    "client:dev": "npm --prefix client start",
+    "build": "npm run client:install && npm run client:build"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "express": "^5.3.0",
+    "socket.io": "^4.8.4"
+  },
+  "private": true,
+  "engines": {
+    "node": ">=18"
+  }
+}

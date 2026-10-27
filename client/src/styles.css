@@ -1,0 +1,10 @@
+/* Angular glue. The game's look comes from styles/style.css and styles/aurora.css (the same CSS the plain-JS
+   version uses); components keep the same markup and class names so those styles apply unchanged. */
+
+/* Wrapper elements must not take part in layout: the page's own containers lay everything out. */
+app-root,
+app-intro, app-topbar, app-home, app-lobby, app-stage, app-seat-menu, app-toast, app-tooltip,
+app-avatar-dialog, app-howto-dialog, app-color-dialog, app-results-dialog, app-stage-top, app-game-panels,
+app-call-buttons, app-video-rails, app-throw-menu, app-util-buttons, app-card, app-avatar, app-chat, app-chat-log, app-chat-form {
+  display: contents;
+}
