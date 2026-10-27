@@ -1,0 +1,33 @@
+<!-- Opening animation: cards fly in, the logo pops, then the home screen slides in -->
+<app-intro />
+
+<!-- The page scrolls inside this container so its scrollbar floats over the full-screen background -->
+<div id="page" class="page">
+  <app-topbar />
+
+  <main>
+    <app-home />
+
+    <section id="room" [hidden]="!store.inRoom()" [class.playing]="store.playing()">
+      <!-- Lobby: title and room code on top; players, settings and actions on the left; chat on the right -->
+      <app-lobby />
+      <!-- Game: full-screen stage -->
+      <app-stage />
+    </section>
+  </main>
+</div>
+
+<!-- Wild colour picker, avatar picker, scorecard and How to play -->
+<app-color-dialog />
+<app-avatar-dialog />
+<app-results-dialog />
+<app-howto-dialog />
+
+<app-toast />
+<!-- Host's right-click menu on another player's seat in the lobby -->
+<app-seat-menu />
+<!-- One shared tooltip, positioned next to whatever has a data-tip attribute -->
+<app-tooltip />
+
+<!-- Other players' voices in the video call -->
+<div id="rtc-audio" hidden></div>

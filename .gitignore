@@ -1,0 +1,8 @@
+node_modules/
+*.log
+.env
+.claude/
+.playwright-mcp/
+client/dist/
+client/.angular/
+client/node_modules/

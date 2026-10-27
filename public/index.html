@@ -1,0 +1,412 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Online Uno</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cellipse cx='16' cy='16' rx='15' ry='10' fill='%23d7263d' transform='rotate(-20 16 16)'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="aurora.css">
+</head>
+<body>
+  <!-- Opening animation: cards fly in, the logo pops, then the home screen slides in -->
+  <div id="intro" class="intro" aria-hidden="true">
+    <div class="intro-rays"></div>
+    <div class="intro-cards">
+      <div class="card c-red ic1"><span class="corner">7</span><span class="center">7</span><span class="corner br">7</span></div>
+      <div class="card c-yellow ic2"><span class="corner">⊘</span><span class="center">⊘</span><span class="corner br">⊘</span></div>
+      <div class="card c-wild ic3"><span class="corner">+4</span><span class="center">+4</span><span class="corner br">+4</span></div>
+      <div class="card c-green ic4"><span class="corner">⇄</span><span class="center">⇄</span><span class="corner br">⇄</span></div>
+      <div class="card c-blue ic5"><span class="corner">+2</span><span class="center">+2</span><span class="corner br">+2</span></div>
+    </div>
+    <div class="intro-burst"></div>
+    <div class="intro-logo">UNO</div>
+    <p class="intro-tag">Get ready to play!</p>
+  </div>
+
+  <!-- The page scrolls inside this container so its scrollbar floats over the full-screen background -->
+  <div id="page" class="page">
+  <header class="topbar">
+    <h1><span class="logo">UNO</span> Online</h1>
+    <div class="topbar-right">
+      <button id="howto-btn" type="button" class="chip-btn howto-btn" aria-haspopup="dialog"><svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"></path><path d="M4 21V5M9 8h6"></path></svg>How to play</button>
+      <span id="conn" class="conn">connecting…</span>
+    </div>
+  </header>
+
+  <main>
+    <section id="home" class="home">
+      <div class="hero">
+        <h2 class="hero-title">The classic card game, online with 2 to 6 friends.</h2>
+      </div>
+      <ol class="steps">
+        <li class="step"><span class="step-no">1</span><span class="step-text"><b>Create a room</b><small>Pick a name and get a code</small></span></li>
+        <li class="step"><span class="step-no">2</span><span class="step-text"><b>Share the code</b><small>Send the 6 letters to your friends</small></span></li>
+        <li class="step"><span class="step-no">3</span><span class="step-text"><b>Shout UNO!</b><small>Down to one card? Say it first</small></span></li>
+      </ol>
+
+      <div class="name-card">
+        <label class="name-field" for="name">Your name</label>
+        <input id="name" maxlength="16" autocomplete="nickname" placeholder="Type your name to play">
+        <button id="name-avatar" type="button" class="name-avatar avatar-button" aria-label="Pick your avatar" data-tip="Pick your avatar">
+          <span id="name-avatar-face">?</span>
+          <span class="pick-label">Pick avatar</span>
+        </button>
+      </div>
+
+      <div class="home-grid">
+        <form id="create-form" class="home-panel create">
+          <h2><span class="dot" aria-hidden="true"></span>Create a room</h2>
+          <p>Be the host: get a fresh code, invite your friends, and start when everyone is in.</p>
+          <div class="panel-row">
+            <button type="submit" class="btn-chunky yellow"><svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>Create room</button>
+          </div>
+        </form>
+
+        <form id="join-form" class="home-panel join">
+          <h2><span class="dot" aria-hidden="true"></span>Join a room</h2>
+          <p>Got a code from a friend? Type the 6 letters and jump right in.</p>
+          <div class="panel-row">
+            <input name="code" class="code-input" aria-label="Room code" maxlength="6" autocapitalize="characters" autocomplete="off" spellcheck="false" required placeholder="ABC123">
+            <button type="submit" class="btn-chunky blue"><svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>Join</button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <section id="room" hidden>
+      <!-- Lobby: title and room code on top; players, settings and actions on the left; chat on the right -->
+      <!-- Lobby: title on the left, room code on the right; seats and settings on the left; chat and actions on the right -->
+      <div class="lobby-top">
+        <div class="lobby-title">
+          <span class="logo" aria-hidden="true">UNO</span>
+          <h2>Waiting <b>lobby</b></h2>
+        </div>
+        <!-- How to play and the connection status move in here while you're in the lobby -->
+        <div id="lobby-top-right" class="lobby-top-right">
+          <div class="code-chip">
+            <span class="code-chip-label">Room code</span>
+            <strong id="room-code"></strong>
+            <button id="copy-code" type="button" class="chip-btn" data-tip="Copy the room code"><svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"></rect><path d="M5 15V5a1 1 0 0 1 1-1h10"></path></svg>Copy</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="room-layout lobby-layout">
+        <div class="play-area lobby-main">
+          <section class="lobby-card players-card" aria-labelledby="players-title">
+            <div class="lobby-card-head">
+              <h3 id="players-title">Players</h3>
+              <span id="status-line" class="lobby-status"></span>
+            </div>
+            <!-- Six seats: players in turn order (the host can drag them to reorder), then the open seats -->
+            <ol id="lobby-seats" class="seat-grid order-list"></ol>
+            <div id="lobby-center" class="lobby-extra"></div>
+
+            <section id="lobby-controls" class="settings-strip" aria-labelledby="settings-title">
+              <div class="strip-head">
+                <h3 id="settings-title">Game settings</h3>
+                <span id="settings-note" class="lobby-note"></span>
+              </div>
+              <form id="settings-form" class="lobby-settings">
+                <div class="spec">
+                  <span class="spec-label">Mode</span>
+                  <fieldset class="mode-picker setting-chip seg">
+                    <legend class="sr-only">Game mode</legend>
+                    <label class="mode-option" data-tip="Players finish one by one; the last one holding cards loses.">
+                      <input type="radio" name="mode" value="last">
+                      <span class="mode-tile">Play till the end</span>
+                    </label>
+                    <label class="mode-option" data-tip="The game ends when one player empties their hand.">
+                      <input type="radio" name="mode" value="first">
+                      <span class="mode-tile">First out wins</span>
+                    </label>
+                  </fieldset>
+                </div>
+                <div class="spec">
+                  <span class="spec-label">Stacking</span>
+                  <label class="setting-chip stack-chip" data-tip="Stack +2 on +2 and +4 on +4">
+                    <input type="checkbox" name="stacking" class="sr-only">
+                    <span>Allow stacking: <span class="stack-off">off</span><span class="stack-on">on</span></span>
+                  </label>
+                </div>
+              </form>
+            </section>
+          </section>
+        </div>
+
+        <!-- Lobby chat and the room's actions. During play the game has its own Log and Chat panels instead. -->
+        <aside id="sidebar" class="sidebar">
+          <section class="game-panel lobby-chat" aria-labelledby="lobby-chat-title">
+            <header class="game-panel-head">
+              <span class="game-panel-icon" aria-hidden="true">💬</span>
+              <h2 id="lobby-chat-title">Chat</h2>
+            </header>
+            <div id="chat-log" class="game-chat chat"></div>
+            <form id="chat-form" class="game-chat-form">
+              <input id="chat-input" aria-label="Chat message" maxlength="200" placeholder="Say something nice" autocomplete="off">
+              <button type="submit" class="send-btn" aria-label="Send"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12l18-8-7 17-3-7z"></path></svg></button>
+            </form>
+          </section>
+          <div class="lobby-actions">
+            <div id="lobby-call" class="call-controls"></div>
+            <button id="leave-btn" type="button" class="chip-btn danger lobby-leave">Leave room</button>
+          </div>
+          <button id="start-btn" type="button" class="btn-chunky green" hidden>Start game</button>
+          <p id="start-hint" class="lobby-hint"></p>
+        </aside>
+      </div>
+
+      <!-- Game: full-screen stage -->
+      <div id="stage" class="stage" hidden>
+        <!-- Direction ring: lies tilted on the table, spins with the play direction, takes the current color -->
+        <div id="swirl" class="swirl-wrap" aria-hidden="true">
+          <svg class="swirl" viewBox="0 0 100 100">
+            <defs>
+              <linearGradient id="swirl-shade" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" class="swirl-stop-light"/>
+                <stop offset="0.5" class="swirl-stop-main"/>
+                <stop offset="1" class="swirl-stop-dark"/>
+              </linearGradient>
+            </defs>
+            <!-- Two arcs of radius 44, each ending in an arrowhead that points along the circle (clockwise) -->
+            <g class="arrows" fill="none" stroke-linecap="round">
+              <path d="M 7.50 38.61 A 44 44 0 0 1 88.11 28.00" stroke="url(#swirl-shade)" stroke-width="3.2"/>
+              <path d="M 92.50 61.39 A 44 44 0 0 1 11.89 72.00" stroke="url(#swirl-shade)" stroke-width="3.2"/>
+              <path class="swirl-gloss" d="M 7.50 38.61 A 44 44 0 0 1 88.11 28.00" stroke-width="0.8"/>
+              <path class="swirl-gloss" d="M 92.50 61.39 A 44 44 0 0 1 11.89 72.00" stroke-width="0.8"/>
+              <polygon points="92.44,25.50 83.78,30.50 92.61,35.79" fill="url(#swirl-shade)" stroke="url(#swirl-shade)" stroke-width="1.2" stroke-linejoin="round"/>
+              <polygon points="7.56,74.50 16.22,69.50 7.39,64.21" fill="url(#swirl-shade)" stroke="url(#swirl-shade)" stroke-width="1.2" stroke-linejoin="round"/>
+            </g>
+          </svg>
+        </div>
+
+        <div class="stage-top">
+          <div class="stage-info"><span class="logo small">UNO</span><span class="stage-room"><span class="stage-room-label">Room</span><strong id="stage-code"></strong></span><span id="stage-status"></span></div>
+          <div class="stage-buttons">
+            <div id="stage-call" class="call-controls"></div>
+            <button id="log-toggle" type="button" aria-controls="game-log-panel" aria-pressed="false">📜 Log</button>
+            <button id="chat-toggle" type="button" aria-controls="game-chat-panel" aria-pressed="false">💬 Chat <span id="chat-unread" class="unread" hidden></span></button>
+            <button id="stage-leave" type="button" class="danger">Leave</button>
+          </div>
+        </div>
+
+        <!-- Separate panels, one open at a time -->
+
+        <section id="game-log-panel" class="game-panel" aria-labelledby="game-log-title" hidden>
+          <header class="game-panel-head">
+            <span class="game-panel-icon" aria-hidden="true">📜</span>
+            <h2 id="game-log-title">Game log</h2>
+            <button type="button" class="game-panel-close" data-close-panel aria-label="Close the game log">✕</button>
+          </header>
+          <ol id="game-log" class="game-log"></ol>
+        </section>
+
+        <section id="game-chat-panel" class="game-panel" aria-labelledby="game-chat-title" hidden>
+          <header class="game-panel-head">
+            <span class="game-panel-icon" aria-hidden="true">💬</span>
+            <h2 id="game-chat-title">Chat</h2>
+            <button type="button" class="game-panel-close" data-close-panel aria-label="Close the chat">✕</button>
+          </header>
+          <div id="game-chat-log" class="game-chat chat"></div>
+          <form id="game-chat-form" class="game-chat-form">
+            <input id="game-chat-input" aria-label="Chat message" maxlength="200" placeholder="Type a message…" autocomplete="off">
+            <button type="submit">Send</button>
+          </form>
+        </section>
+
+        <!-- Video call tiles, a column on each side of the table (wide screens) -->
+        <div id="video-rail-left" class="video-rail left"></div>
+        <div id="video-rail-right" class="video-rail right"></div>
+        <div id="opponents"></div>
+        <!-- Click another player during a game: throw something at them -->
+        <div id="throw-menu" class="throw-menu" role="dialog" aria-label="Throw something" hidden>
+          <div id="throw-options" class="throw-options"></div>
+        </div>
+        <div id="stage-center" class="stage-center"></div>
+
+        <div id="turn-banner" class="turn-banner">
+          <span id="turn-text"></span>
+          <span id="timer" class="timer"></span>
+        </div>
+
+        <!-- After drawing a card that can be played: play it now, or keep it (either way the turn ends) -->
+        <div id="drawn-prompt" class="drawn-prompt" role="dialog" aria-labelledby="drawn-title" hidden>
+          <span class="prompt-pill"><svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M6 11l6 6 6-6M5 21h14"></path></svg>FROM THE DECK</span>
+          <p id="drawn-title" class="drawn-title">You drew a card you <b>can play!</b></p>
+          <div id="drawn-card" class="drawn-card"></div>
+          <p id="drawn-note" class="drawn-note"></p>
+          <div class="drawn-actions">
+            <button id="drawn-play" type="button" class="btn-chunky green"><svg class="btn-icon-fill-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4l13 8-13 8z"></path></svg>Play it</button>
+            <button id="drawn-keep" type="button" class="btn-chunky yellow">Keep it</button>
+          </div>
+        </div>
+        <!-- A Draw Two / Wild Draw Four aimed at you that you can answer: take the cards, challenge, or stack -->
+        <div id="pending-prompt" class="drawn-prompt pending-prompt" role="dialog" aria-labelledby="pending-title" hidden>
+          <p id="pending-title" class="drawn-title"></p>
+          <div id="pending-card" class="drawn-card"></div>
+          <p id="pending-hint" class="pending-hint"></p>
+          <div id="pending-actions" class="drawn-actions"></div>
+        </div>
+        <div id="self-video" class="self-video"></div>
+        <div id="my-badge" class="my-badge"></div>
+        <div id="hand" class="hand"></div>
+        <div id="actions" class="actions"></div>
+      </div>
+    </section>
+  </main>
+  </div>
+
+  <!-- Wild color picker: a color wheel like the oval on a Wild card -->
+  <div id="color-dialog" class="dialog" hidden>
+    <div class="dialog-box festive color-box" role="dialog" aria-labelledby="color-title">
+      <h2 id="color-title" class="color-title">Choose a <b>colour</b></h2>
+      <p class="color-sub">Your Wild card is on the table. What colour should come next?</p>
+      <div class="color-wheel">
+        <button type="button" data-color="green" class="wedge wedge-green" aria-label="Green"><span>Green</span></button>
+        <button type="button" data-color="red" class="wedge wedge-red" aria-label="Red"><span>Red</span></button>
+        <button type="button" data-color="yellow" class="wedge wedge-yellow" aria-label="Yellow"><span>Yellow</span></button>
+        <button type="button" data-color="blue" class="wedge wedge-blue" aria-label="Blue"><span>Blue</span></button>
+        <div class="wheel-hub" aria-hidden="true">WILD</div>
+      </div>
+      <p id="color-timer" class="color-timer" aria-live="polite"></p>
+      <div class="color-bar" aria-hidden="true"><i id="color-bar-fill"></i></div>
+    </div>
+  </div>
+
+  <div id="avatar-dialog" class="dialog" hidden>
+    <div class="dialog-box festive avatar-box" role="dialog" aria-labelledby="avatar-title">
+      <div class="avatar-head">
+        <div id="avatar-preview" class="avatar-preview" aria-hidden="true">?</div>
+        <h2 id="avatar-title" class="avatar-title"></h2>
+      </div>
+      <div class="avatar-choices">
+        <div id="avatar-images" class="avatar-images" role="radiogroup" aria-label="Character"></div>
+      </div>
+      <button id="avatar-done" type="button" class="btn-chunky yellow">Done</button>
+    </div>
+  </div>
+
+  <div id="results-dialog" class="dialog" hidden>
+    <div class="dialog-box festive results-box" role="dialog" aria-labelledby="results-title">
+      <header class="results-bar">
+        <span class="logo" aria-hidden="true">UNO</span>
+        <div class="results-bar-text"><strong>Game over</strong><small>Final scorecard for this round</small></div>
+        <span class="results-mode-chip"><small>Game end</small><b id="results-mode" class="results-mode"></b></span>
+        <button id="results-close" type="button" class="game-panel-close results-close" aria-label="Close the scorecard" data-tip="Back to the room">✕</button>
+      </header>
+      <div class="results-body">
+        <section class="results-podium-panel">
+          <h2 id="results-title">Game over</h2>
+          <div class="results-trophy" aria-hidden="true"><svg viewBox="0 0 64 64" fill="none"><path d="M18 8h28v16a14 14 0 0 1-28 0z" fill="#f4c20d"></path><path d="M18 12H8c0 9 4 14 11 15M46 12h10c0 9-4 14-11 15" stroke="#f4c20d" stroke-width="3.5" stroke-linecap="round"></path><path d="M32 38v10M22 56h20M25 48h14v8H25z" stroke="#f4c20d" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" fill="#f4c20d"></path><path d="M24 12v10" stroke="#fff" stroke-opacity=".6" stroke-width="3" stroke-linecap="round"></path></svg></div>
+          <div id="results-podium" class="podium"></div>
+        </section>
+        <section class="results-standings" aria-labelledby="standings-title">
+          <h3 id="standings-title">Final standings</h3>
+          <ol id="results-list" class="results-list"></ol>
+        </section>
+      </div>
+      <!-- Leave on the left; the host starts the next game, everyone else waits -->
+      <div id="results-actions" class="results-actions"></div>
+    </div>
+  </div>
+
+  <!-- How to play: rules and the special cards, opened from the top bar -->
+  <div id="howto-dialog" class="dialog" hidden>
+    <div class="dialog-box festive howto-box" role="dialog" aria-labelledby="howto-title">
+      <header class="howto-head">
+        <h2 id="howto-title">📖 How to play <span class="logo small">UNO</span></h2>
+        <button id="howto-close" type="button" class="game-panel-close" aria-label="Close how to play">✕</button>
+      </header>
+      <div class="howto-body">
+        <div class="howto-grid">
+          <section class="howto-section">
+            <h3>🎯 Goal</h3>
+            <p>Be the first to get rid of all your cards. Everyone starts with 7.</p>
+          </section>
+          <section class="howto-section">
+            <h3>🕹️ On your turn</h3>
+            <ol class="howto-steps">
+              <li>Play a card that matches the top card by <b>color</b>, <b>number</b> or <b>symbol</b>, or play a <b>Wild</b>.</li>
+              <li>Can't play? A card is drawn for you. If it fits, choose <b>Play it</b> or <b>Keep it</b>; either way the turn moves on.</li>
+              <li>Down to one card? Press <b>UNO!</b> before the next player moves. Miss it and it's too late: on your turn you can't play your last card and must draw instead.</li>
+              <li>Every move has <b>10 seconds</b>. If time runs out, a card that fits is played for you; if none fits, a card is drawn for you and the turn passes.</li>
+            </ol>
+          </section>
+          <section class="howto-section">
+            <h3>📣 Say UNO!</h3>
+            <p>When you're down to one card, press <b>UNO!</b> before the next player moves. Forget, and another player can press <b>Catch!</b> first: you draw 2 cards. If nobody catches you, you still can't go out: once the next player has moved, you must draw a card on your turn.</p>
+          </section>
+          <section class="howto-section">
+            <h3>🏁 Game modes</h3>
+            <p><b>Play till the end:</b> players finish one by one; the last one holding cards loses.</p>
+            <p><b>First out wins:</b> the game ends when one player empties their hand; the rest are ranked by points left.</p>
+            <p class="howto-note">The host picks the mode in the room before starting. <b>Stacking</b> (+2 on +2, +4 on +4) is an optional house rule.</p>
+          </section>
+          <section class="howto-section howto-scoring">
+            <h3>🏆 Scoring</h3>
+            <p>When you go out, you score the cards still in other players' hands.</p>
+            <p class="score-chips"><span>Numbers: face value</span><span>Action: 20</span><span>Wild: 50</span></p>
+          </section>
+        </div>
+
+        <div class="specials" aria-labelledby="specials-title">
+          <h2 id="specials-title">Special cards</h2>
+          <p class="specials-sub">Play them at the right moment to turn the game around.</p>
+          <div class="specials-grid">
+            <article class="special">
+              <div class="card c-red" aria-hidden="true"><span class="corner">⊘</span><span class="center">⊘</span><span class="corner br">⊘</span></div>
+              <h3>Skip</h3>
+              <p>The next player loses their turn.</p>
+              <span class="points">20 points</span>
+            </article>
+            <article class="special">
+              <div class="card c-green" aria-hidden="true"><span class="corner">⇄</span><span class="center">⇄</span><span class="corner br">⇄</span></div>
+              <h3>Reverse</h3>
+              <p>Changes the direction of play. With 2 players it works like Skip.</p>
+              <span class="points">20 points</span>
+            </article>
+            <article class="special">
+              <div class="card c-blue" aria-hidden="true"><span class="corner">+2</span><span class="center">+2</span><span class="corner br">+2</span></div>
+              <h3>Draw Two</h3>
+              <p>The next player draws 2 cards and loses their turn.</p>
+              <span class="points">20 points</span>
+            </article>
+            <article class="special">
+              <div class="card c-wild" aria-hidden="true"><span class="corner">W</span><span class="center">W</span><span class="corner br">W</span></div>
+              <h3>Wild</h3>
+              <p>Play it on any card and choose the next color.</p>
+              <span class="points">50 points</span>
+            </article>
+            <article class="special">
+              <div class="card c-wild" aria-hidden="true"><span class="corner">+4</span><span class="center">+4</span><span class="corner br">+4</span></div>
+              <h3>Wild Draw Four</h3>
+              <p>Choose the color. The next player draws 4 and loses their turn. Only allowed when you have no card of the current color, and the next player can challenge it.</p>
+              <span class="points">50 points</span>
+            </article>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" role="status" hidden></div>
+
+  <!-- Host's right-click menu on another player's seat in the lobby -->
+  <div id="seat-menu" class="seat-menu" role="menu" hidden></div>
+
+  <!-- One shared tooltip, positioned next to whatever has a data-tip attribute -->
+  <div id="tip" class="tip" role="tooltip" aria-hidden="true"></div>
+
+  <!-- Other players' voices in the video call -->
+  <div id="rtc-audio" hidden></div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="moments.js"></script>
+  <script src="fx.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

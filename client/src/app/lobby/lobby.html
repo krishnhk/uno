@@ -1,0 +1,132 @@
+@if (store.view(); as v) {
+  <!-- Lobby: title on the left, room code on the right; seats and settings on the left; chat and actions on the right -->
+  <div class="lobby-top">
+    <div class="lobby-title">
+      <span class="logo" aria-hidden="true">UNO</span>
+      <h2>Waiting <b>lobby</b></h2>
+    </div>
+    <!-- How to play and the connection status sit in here while you're in the lobby -->
+    <div id="lobby-top-right" class="lobby-top-right">
+      <div class="code-chip">
+        <span class="code-chip-label">Room code</span>
+        <strong id="room-code">{{ v.code }}</strong>
+        <button id="copy-code" type="button" class="chip-btn" data-tip="Copy the room code" (click)="copyCode()"><svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"></rect><path d="M5 15V5a1 1 0 0 1 1-1h10"></path></svg>Copy</button>
+      </div>
+      <app-util-buttons />
+    </div>
+  </div>
+
+  <div class="room-layout lobby-layout">
+    <div class="play-area lobby-main">
+      <section class="lobby-card players-card" aria-labelledby="players-title">
+        <div class="lobby-card-head">
+          <h3 id="players-title">Players</h3>
+          <span id="status-line" class="lobby-status">{{ v.players.length }} of {{ v.settings.maxPlayers }} seats taken</span>
+        </div>
+        <!-- Six seats: players in turn order (the host can drag them to reorder), then the open seats -->
+        <ol id="lobby-seats" class="seat-grid order-list">
+          @for (p of v.players; track p.id; let i = $index) {
+            <li
+              class="seat order-row"
+              [class.me]="p.id === v.youId"
+              [class.away]="!p.connected"
+              [class.has-menu]="hasMenu(p)"
+              [class.dragging]="draggedId() === p.id"
+              [class.drop-target]="dropTargetId() === p.id"
+              [attr.data-player]="p.id"
+              [attr.data-id]="p.id"
+              [draggable]="canReorder()"
+              [attr.data-tip]="seatTip(p, i + 1)"
+              (dragstart)="dragStart($event, p.id)"
+              (dragover)="dragOver($event, p.id)"
+              (drop)="drop($event, p.id)"
+              (dragend)="dragEnd()"
+              (contextmenu)="contextMenu($event, p)"
+              (touchstart)="pressStart($event, p)"
+              (touchend)="pressEnd()"
+              (touchmove)="pressEnd()"
+              (touchcancel)="pressEnd()"
+            >
+              <span class="seat-label">Seat {{ i + 1 }}</span>
+              @if (p.id === v.hostId) {
+                <span class="host-crown" data-tip="Host"><svg viewBox="0 0 24 20" aria-hidden="true"><path d="M2 16L1 5l6 5 5-8 5 8 6-5-1 11z"></path></svg></span>
+              }
+              <div class="avatar-ring">
+                @if (p.id === v.youId) {
+                  <button type="button" app-avatar class="avatar" [name]="p.name" [avatar]="p.avatar" [editable]="true" [playerId]="p.id"></button>
+                } @else {
+                  <div app-avatar class="avatar" [name]="p.name" [avatar]="p.avatar" [editable]="false" [playerId]="p.id"></div>
+                }
+              </div>
+              <div class="seat-name">{{ p.name }}</div>
+              <div class="seat-sub">{{ seatStatus(p) }}</div>
+            </li>
+          }
+          @for (n of emptySeats(); track n) {
+            <li class="seat empty" data-tip="Share the room code to fill this seat">
+              <span class="seat-label">Seat {{ n }}</span>
+              <span class="open-plus" aria-hidden="true">+</span>
+              <div class="seat-name">Open seat</div>
+            </li>
+          }
+        </ol>
+        <div id="lobby-center" class="lobby-extra">
+          @if (v.lastResult; as last) {
+            <span>{{ last.winnerName }} won the last game</span>
+            <button type="button" class="chip-btn" (click)="showResults()">View results</button>
+          }
+        </div>
+
+        <section id="lobby-controls" class="settings-strip" aria-labelledby="settings-title">
+          <div class="strip-head">
+            <h3 id="settings-title">Game settings</h3>
+            <span id="settings-note" class="lobby-note" [attr.data-tip]="store.isHost() ? '' : 'Only ' + (host()?.name ?? 'the host') + ' (host) can change the game settings'">{{ store.isHost() ? '' : 'Host only' }}</span>
+          </div>
+          <form #form id="settings-form" class="lobby-settings" [class.locked]="!store.isHost()" (change)="saveSettings(form)" (submit)="$event.preventDefault()">
+            <div class="spec">
+              <span class="spec-label">Mode</span>
+              <fieldset class="mode-picker setting-chip seg">
+                <legend class="sr-only">Game mode</legend>
+                <label class="mode-option" data-tip="Players finish one by one; the last one holding cards loses.">
+                  <input type="radio" name="mode" value="last" [checked]="v.settings.mode === 'last'" [disabled]="!store.isHost()" />
+                  <span class="mode-tile">Play till the end</span>
+                </label>
+                <label class="mode-option" data-tip="The game ends when one player empties their hand.">
+                  <input type="radio" name="mode" value="first" [checked]="v.settings.mode === 'first'" [disabled]="!store.isHost()" />
+                  <span class="mode-tile">First out wins</span>
+                </label>
+              </fieldset>
+            </div>
+            <div class="spec">
+              <span class="spec-label">Stacking</span>
+              <label class="setting-chip stack-chip" data-tip="Stack +2 on +2 and +4 on +4">
+                <input type="checkbox" name="stacking" class="sr-only" [checked]="v.settings.stacking" [disabled]="!store.isHost()" />
+                <span>Allow stacking: <span class="stack-off">off</span><span class="stack-on">on</span></span>
+              </label>
+            </div>
+          </form>
+        </section>
+      </section>
+    </div>
+
+    <!-- Lobby chat and the room's actions. During play the game has its own Log and Chat panels instead. -->
+    <aside id="sidebar" class="sidebar">
+      <section class="game-panel lobby-chat" aria-labelledby="lobby-chat-title">
+        <header class="game-panel-head">
+          <span class="game-panel-icon" aria-hidden="true">💬</span>
+          <h2 id="lobby-chat-title">Chat</h2>
+        </header>
+        <app-chat-log logId="chat-log" />
+        <app-chat-form formId="chat-form" inputId="chat-input" />
+      </section>
+      <div class="lobby-actions">
+        <div id="lobby-call" class="call-controls"><app-call-buttons /></div>
+        <button id="leave-btn" type="button" class="chip-btn danger lobby-leave" (click)="store.leaveRoom()">Leave room</button>
+      </div>
+      <button id="start-btn" type="button" class="btn-chunky green" [hidden]="!store.isHost()" [disabled]="!canStart()" (click)="start()">
+        <span class="btn-icon-fill" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z"></path></svg></span>Start game
+      </button>
+      <p id="start-hint" class="lobby-hint" [class.waiting-host]="!store.isHost() && canStart()">{{ hint() }}</p>
+    </aside>
+  </div>
+}
